@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Montserrat } from "next/font/google";
 import { AuthProvider } from "@/lib/auth-context";
 import { ThemeProvider } from "@/components/theme-provider";
@@ -9,6 +9,12 @@ const montserrat = Montserrat({
   subsets: ["latin"],
   weight: ["300", "400", "500", "600", "700", "800", "900"],
 });
+
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 5,
+};
 
 export const metadata: Metadata = {
   title: "OBELS DAVE LOGISTICS LIMITED | Nigeria's Premier Trucking & Logistics",

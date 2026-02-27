@@ -29,7 +29,7 @@ export default function HomePage() {
   };
 
   return (
-    <div className="min-h-screen" style={{ background: 'var(--bg)' }}>
+    <div className="min-h-screen overflow-x-hidden" style={{ background: 'var(--bg)' }}>
       <Navbar />
 
       {/* Hero Section */}
@@ -52,27 +52,27 @@ export default function HomePage() {
                 <span className="gradient-text">Across Nigeria</span><br />
                 With Confidence
               </h1>
-              <p className="text-lg text-white/60 max-w-lg leading-relaxed">
+              <p className="text-base sm:text-lg text-white/60 max-w-lg leading-relaxed">
                 Enterprise-grade trucking and logistics. Real-time tracking, dynamic pricing, and instant waybill generation — all in one platform.
               </p>
-              <div className="flex flex-col sm:flex-row gap-4">
+              <div className="flex flex-col sm:flex-row gap-3">
                 <Link
                   href="/signup"
-                  className="inline-flex items-center justify-center gap-2 px-8 py-4 rounded-xl text-white font-semibold text-base transition-all hover:shadow-xl hover:shadow-orange/20 hover:-translate-y-0.5"
+                  className="inline-flex items-center justify-center gap-2 px-6 sm:px-8 py-3.5 sm:py-4 rounded-xl text-white font-semibold text-sm sm:text-base transition-all hover:shadow-xl hover:shadow-orange/20 hover:-translate-y-0.5"
                   style={{ background: 'var(--orange)' }}
                 >
                   Start Shipping <ArrowRight className="w-5 h-5" />
                 </Link>
                 <Link
                   href="#quote"
-                  className="inline-flex items-center justify-center gap-2 px-8 py-4 rounded-xl text-white font-semibold text-base border border-white/20 hover:bg-white/5 transition-all"
+                  className="inline-flex items-center justify-center gap-2 px-6 sm:px-8 py-3.5 sm:py-4 rounded-xl text-white font-semibold text-sm sm:text-base border border-white/20 hover:bg-white/5 transition-all"
                 >
                   <Calculator className="w-5 h-5" /> Get Instant Quote
                 </Link>
               </div>
 
               {/* Trust badges */}
-              <div className="flex items-center gap-8 pt-4">
+              <div className="flex flex-wrap items-center gap-4 sm:gap-8 pt-4">
                 <div className="text-center">
                   <p className="text-2xl font-bold text-white">500+</p>
                   <p className="text-xs text-white/40">Trucks</p>
@@ -404,11 +404,11 @@ export default function HomePage() {
           <p className="text-lg text-white/60 mb-8 max-w-2xl mx-auto">
             Join thousands of businesses that trust OBELS DAVE LOGISTICS for reliable, technology-driven freight movement across Nigeria.
           </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Link href="/signup" className="inline-flex items-center justify-center gap-2 px-8 py-4 rounded-xl text-white font-semibold text-base transition-all hover:shadow-xl" style={{ background: 'var(--orange)' }}>
+          <div className="flex flex-col sm:flex-row gap-3 justify-center">
+            <Link href="/signup" className="inline-flex items-center justify-center gap-2 px-6 sm:px-8 py-3.5 sm:py-4 rounded-xl text-white font-semibold text-sm sm:text-base transition-all hover:shadow-xl" style={{ background: 'var(--orange)' }}>
               Create Free Account <ArrowRight className="w-5 h-5" />
             </Link>
-            <Link href="/contact" className="inline-flex items-center justify-center gap-2 px-8 py-4 rounded-xl text-white font-semibold text-base border border-white/20 hover:bg-white/5 transition-all">
+            <Link href="/contact" className="inline-flex items-center justify-center gap-2 px-6 sm:px-8 py-3.5 sm:py-4 rounded-xl text-white font-semibold text-sm sm:text-base border border-white/20 hover:bg-white/5 transition-all">
               Contact Sales
             </Link>
           </div>
