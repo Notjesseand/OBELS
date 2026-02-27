@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { useState } from 'react';
 import { X, Truck, ChevronDown } from 'lucide-react';
-import { HiMiniBars2 } from 'react-icons/hi2';
+import { HiBars2 } from 'react-icons/hi2';
 import { useAuth } from '@/lib/auth-context';
 import { ThemeToggle } from '@/components/ui/ThemeToggle';
 
@@ -90,7 +90,7 @@ export default function Navbar() {
 
           {/* Mobile hamburger */}
           <button onClick={() => setMobileOpen(!mobileOpen)} className="lg:hidden p-2 text-white rounded-lg hover:bg-white/10">
-            {mobileOpen ? <X className="w-6 h-6" /> : <HiMiniBars2 className="w-6 h-6" />}
+            {mobileOpen ? <X className="w-6 h-6" /> : <HiBars2 className="w-6 h-6" />}
           </button>
         </div>
       </div>
