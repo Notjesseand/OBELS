@@ -1,7 +1,8 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, Suspense } from 'react';
 import { useAuth } from '@/lib/auth-context';
+import { useSearchParams } from 'next/navigation';
 import StatusBadge from '@/components/ui/StatusBadge';
 import { MapPin, Truck, Clock, Phone, Search, Package, CheckCircle, Loader2, Navigation } from 'lucide-react';
 import { ShipmentStatus, formatDateTime } from '@/lib/utils';
@@ -25,18 +26,44 @@ function formatTimestamp(ts: Timestamp | Date | undefined): string {
   return formatDateTime(date);
 }
 
-export default function TrackingPage() {
+function TrackingContent() {
+  const searchParams = useSearchParams();
+  const initialWaybill = searchParams.get('waybill') || '';
+
   const { userProfile } = useAuth();
   const [activeShipments, setActiveShipments] = useState<ShipmentRecord[]>([]);
   const [loadingActive, setLoadingActive] = useState(true);
   const [selectedId, setSelectedId] = useState<string | null>(null);
 
   // Waybill lookup state
-  const [waybillInput, setWaybillInput] = useState('');
+  const [waybillInput, setWaybillInput] = useState(initialWaybill);
   const [searching, setSearching] = useState(false);
   const [lookupResult, setLookupResult] = useState<ShipmentRecord | null>(null);
   const [trackingEvents, setTrackingEvents] = useState<TrackingEvent[]>([]);
   const [lookupError, setLookupError] = useState('');
+  
+  // Try initial waybill search if provided
+  useEffect(() => {
+    if (initialWaybill) {
+      const doInitialSearch = async () => {
+        setSearching(true);
+        try {
+          const shipment = await lookupShipment(initialWaybill.toUpperCase());
+          if (shipment) {
+            setLookupResult(shipment);
+            const events = await getTrackingHistory(initialWaybill.toUpperCase());
+            setTrackingEvents(events);
+          } else {
+            setLookupError('No shipment found with this waybill number.');
+          }
+        } catch (err) {
+          console.error(err);
+        }
+        setSearching(false);
+      };
+      doInitialSearch();
+    }
+  }, [initialWaybill]);
 
   // Fetch real client shipments
   useEffect(() => {
@@ -348,5 +375,13 @@ export default function TrackingPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function TrackingPage() {
+  return (
+    <Suspense fallback={<div className="p-12 text-center text-gray-500 animate-pulse">Loading tracking data...</div>}>
+      <TrackingContent />
+    </Suspense>
   );
 }

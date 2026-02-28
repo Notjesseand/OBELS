@@ -6,6 +6,7 @@ import { formatCurrency, formatDate, ShipmentStatus } from '@/lib/utils';
 import { onClientShipmentsSnapshot, ShipmentRecord } from '@/lib/tracking';
 import { useAuth } from '@/lib/auth-context';
 import { Search, Filter, Loader2, Package } from 'lucide-react';
+import Link from 'next/link';
 
 export default function ShipmentsPage() {
   const { user, userProfile } = useAuth();
@@ -106,7 +107,11 @@ export default function ShipmentsPage() {
             <tbody className="text-sm" style={{ color: 'var(--text-secondary)' }}>
               {filtered.map(s => (
                 <tr key={s.waybillNumber} className="border-t hover:bg-black/5 dark:hover:bg-white/5 transition-colors" style={{ borderColor: 'var(--border)' }}>
-                  <td className="px-6 py-4 font-mono text-xs font-medium" style={{ color: 'var(--text-primary)' }}>{s.waybillNumber}</td>
+                  <td className="px-6 py-4 font-mono text-xs font-medium">
+                    <Link href={`/dashboard/client/tracking?waybill=${s.waybillNumber}`} className="hover:underline transition-all" style={{ color: 'var(--orange)' }}>
+                      {s.waybillNumber}
+                    </Link>
+                  </td>
                   <td className="px-6 py-4 whitespace-nowrap">{s.origin} → {s.destination}</td>
                   <td className="px-6 py-4">
                     <span className="px-2 py-0.5 rounded text-xs font-medium text-white" style={{ background: s.type === 'FTL' ? 'var(--navy)' : 'var(--info)' }}>{s.type}</span>
