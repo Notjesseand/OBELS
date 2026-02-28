@@ -21,15 +21,15 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
   const [mobileOpen, setMobileOpen] = useState(false);
   const { userProfile } = useAuth();
 
-  const fullName = `${userProfile?.firstName || ''} ${userProfile?.lastName || ''}`.trim() || 'Client';
-  const company = userProfile?.companyName || 'Client';
+  const fullName = `${userProfile?.firstName || ''} ${userProfile?.lastName || ''}`.trim() || '';
+  const company = userProfile?.companyName || '';
 
   return (
     <div className="min-h-screen" style={{ background: 'var(--bg)' }}>
       <Sidebar links={clientLinks} role="client" userName={fullName} userRole={company} />
       <MobileSidebar links={clientLinks} role="client" userName={fullName} userRole={company} isOpen={mobileOpen} onClose={() => setMobileOpen(false)} />
       <div className="lg:ml-[260px]">
-        <TopBar title="Client Portal" subtitle={company} onMenuClick={() => setMobileOpen(true)} />
+        <TopBar title="Dashboard" subtitle={company} onMenuClick={() => setMobileOpen(true)} />
         <main className="p-4 lg:p-8">
           {children}
         </main>
