@@ -1,18 +1,12 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { mockShipments } from '@/lib/mock-data';
+import { useAuth } from '@/lib/auth-context';
 import StatusBadge from '@/components/ui/StatusBadge';
-import { MapPin, Truck, Clock, Phone, Search, Package, CheckCircle, Loader2 } from 'lucide-react';
+import { MapPin, Truck, Clock, Phone, Search, Package, CheckCircle, Loader2, Navigation } from 'lucide-react';
 import { ShipmentStatus, formatDateTime } from '@/lib/utils';
-import { lookupShipment, getTrackingHistory, TrackingEvent, ShipmentRecord } from '@/lib/tracking';
+import { lookupShipment, getTrackingHistory, TrackingEvent, ShipmentRecord, onClientShipmentsSnapshot } from '@/lib/tracking';
 import { Timestamp } from 'firebase/firestore';
-import dynamic from 'next/dynamic';
-
-const MapContainer = dynamic(() => import('react-leaflet').then(m => m.MapContainer), { ssr: false });
-const TileLayer = dynamic(() => import('react-leaflet').then(m => m.TileLayer), { ssr: false });
-const Marker = dynamic(() => import('react-leaflet').then(m => m.Marker), { ssr: false });
-const Popup = dynamic(() => import('react-leaflet').then(m => m.Popup), { ssr: false });
 
 const STATUS_FLOW: ShipmentStatus[] = ['pending', 'confirmed', 'picked-up', 'in-transit', 'delivered'];
 
@@ -32,8 +26,10 @@ function formatTimestamp(ts: Timestamp | Date | undefined): string {
 }
 
 export default function TrackingPage() {
-  const [mounted, setMounted] = useState(false);
-  const [selectedId, setSelectedId] = useState(mockShipments[0].id);
+  const { userProfile } = useAuth();
+  const [activeShipments, setActiveShipments] = useState<ShipmentRecord[]>([]);
+  const [loadingActive, setLoadingActive] = useState(true);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
 
   // Waybill lookup state
   const [waybillInput, setWaybillInput] = useState('');
@@ -42,14 +38,28 @@ export default function TrackingPage() {
   const [trackingEvents, setTrackingEvents] = useState<TrackingEvent[]>([]);
   const [lookupError, setLookupError] = useState('');
 
+  // Fetch real client shipments
   useEffect(() => {
-    setMounted(true);
-    const link = document.createElement('link');
-    link.rel = 'stylesheet';
-    link.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
-    document.head.appendChild(link);
-    return () => { document.head.removeChild(link); };
-  }, []);
+    if (userProfile?.role === 'client' && userProfile.email) {
+      const unsub = onClientShipmentsSnapshot(userProfile.email, (data) => {
+        // Filter out completely delivered/cancelled if we only want "active"
+        // But let's show all or just non-delivered ones here
+        const active = data.filter(s => !['delivered', 'cancelled'].includes(s.currentStatus));
+        setActiveShipments(active);
+        
+        if (active.length > 0 && !selectedId) {
+          setSelectedId(active[0].waybillNumber);
+        } else if (active.length === 0) {
+          setSelectedId(null);
+        }
+        
+        setLoadingActive(false);
+      });
+      return () => unsub();
+    } else if (userProfile) {
+      setLoadingActive(false);
+    }
+  }, [userProfile, selectedId]);
 
   const handleWaybillLookup = async () => {
     const waybill = waybillInput.trim().toUpperCase();
@@ -77,8 +87,7 @@ export default function TrackingPage() {
     setSearching(false);
   };
 
-  const activeShipments = mockShipments.filter(s => ['in-transit', 'picked-up', 'confirmed'].includes(s.status));
-  const selected = mockShipments.find(s => s.id === selectedId) || activeShipments[0];
+  const selected = activeShipments.find(s => s.waybillNumber === selectedId);
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -229,109 +238,115 @@ export default function TrackingPage() {
         )}
       </div>
 
-      {/* Active Shipments + Map */}
+      {/* Active Shipments */}
       <div className="grid lg:grid-cols-3 gap-6">
-        {/* Map */}
-        <div className="lg:col-span-2 bg-[var(--surface)] rounded-xl border shadow-sm overflow-hidden" style={{ borderColor: 'var(--border)', height: '500px' }}>
-          {mounted ? (
-            <MapContainer
-              center={[selected.lat, selected.lng]}
-              zoom={7}
-              style={{ width: '100%', height: '100%' }}
-              scrollWheelZoom={true}
-            >
-              <TileLayer
-                attribution='&copy; <a href="https://www.openstreetmap.org">OpenStreetMap</a>'
-                url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-              />
-              {activeShipments.map(s => (
-                <Marker key={s.id} position={[s.lat, s.lng]}>
-                  <Popup>
-                    <div className="text-xs">
-                      <p className="font-bold">{s.waybillNumber}</p>
-                      <p>{s.origin} → {s.destination}</p>
-                      <p className="capitalize">{s.status}</p>
-                    </div>
-                  </Popup>
-                </Marker>
-              ))}
-            </MapContainer>
-          ) : (
-            <div className="flex items-center justify-center h-full" style={{ background: 'var(--slate-50)' }}>
-              <p className="text-sm" style={{ color: 'var(--text-muted)' }}>Loading map...</p>
+        {/* Shipment List */}
+        <div className="space-y-3 max-h-[500px] overflow-y-auto lg:col-span-1">
+          <h3 className="font-semibold text-sm" style={{ color: 'var(--text-primary)' }}>Your Active Shipments ({activeShipments.length})</h3>
+          
+          {loadingActive ? (
+            <div className="p-8 flex justify-center border rounded-xl" style={{ borderColor: 'var(--border)' }}>
+              <Loader2 className="w-6 h-6 animate-spin text-gray-400" />
             </div>
+          ) : activeShipments.length === 0 ? (
+            <div className="p-8 text-center border rounded-xl" style={{ borderColor: 'var(--border)', background: 'var(--surface)' }}>
+              <Package className="w-8 h-8 mx-auto mb-2 text-gray-400" />
+              <p className="text-sm text-gray-500">No active shipments.</p>
+            </div>
+          ) : (
+            activeShipments.map(s => (
+              <button
+                key={s.waybillNumber}
+                onClick={() => setSelectedId(s.waybillNumber)}
+                className="w-full text-left p-4 rounded-xl border transition-all hover:shadow-md"
+                style={{
+                  borderColor: selectedId === s.waybillNumber ? 'var(--orange)' : 'var(--border)',
+                  background: selectedId === s.waybillNumber ? 'var(--orange-100)' : 'var(--surface)',
+                }}
+              >
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-xs font-mono font-medium" style={{ color: 'var(--text-primary)' }}>{s.waybillNumber}</span>
+                  <StatusBadge status={s.currentStatus} size="sm" />
+                </div>
+                <p className="text-sm font-medium mb-1" style={{ color: 'var(--text-primary)' }}>
+                  <MapPin className="w-3.5 h-3.5 inline mr-1" style={{ color: 'var(--orange)' }} />
+                  {s.origin} → {s.destination}
+                </p>
+                {s.driverName && (
+                  <p className="text-xs flex items-center gap-1 mt-2" style={{ color: 'var(--text-muted)' }}>
+                    <Truck className="w-3 h-3" /> {s.driverName}
+                  </p>
+                )}
+              </button>
+            ))
           )}
         </div>
 
-        {/* Shipment List */}
-        <div className="space-y-3 max-h-[500px] overflow-y-auto">
-          <h3 className="font-semibold text-sm" style={{ color: 'var(--text-primary)' }}>Active Shipments ({activeShipments.length})</h3>
-          {activeShipments.map(s => (
-            <button
-              key={s.id}
-              onClick={() => setSelectedId(s.id)}
-              className="w-full text-left p-4 rounded-xl border transition-all hover:shadow-md"
-              style={{
-                borderColor: selectedId === s.id ? 'var(--orange)' : 'var(--border)',
-                background: selectedId === s.id ? 'var(--orange-100)' : 'var(--surface)',
-              }}
-            >
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-xs font-mono font-medium" style={{ color: 'var(--text-primary)' }}>{s.waybillNumber}</span>
-                <StatusBadge status={s.status} size="sm" />
+        {/* Selected detail */}
+        <div className="lg:col-span-2">
+          {selected ? (
+            <div className="bg-[var(--surface)] rounded-xl border shadow-sm p-6" style={{ borderColor: 'var(--border)' }}>
+              <h3 className="font-bold mb-4" style={{ color: 'var(--text-primary)' }}>Shipment Details — {selected.waybillNumber}</h3>
+              <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+                <div className="flex items-start gap-3">
+                  <MapPin className="w-5 h-5 mt-0.5" style={{ color: 'var(--orange)' }} />
+                  <div>
+                    <p className="text-xs" style={{ color: 'var(--text-muted)' }}>Route</p>
+                    <p className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>{selected.origin} → {selected.destination}</p>
+                  </div>
+                </div>
+                <div className="flex items-start gap-3">
+                  <Clock className="w-5 h-5 mt-0.5" style={{ color: 'var(--info)' }} />
+                  <div>
+                    <p className="text-xs" style={{ color: 'var(--text-muted)' }}>ETA</p>
+                    <p className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>
+                      {selected.estimatedDelivery}
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-start gap-3">
+                  <Truck className="w-5 h-5 mt-0.5" style={{ color: 'var(--success)' }} />
+                  <div>
+                    <p className="text-xs" style={{ color: 'var(--text-muted)' }}>Driver</p>
+                    <p className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>{selected.driverName || 'Not assigned'}</p>
+                  </div>
+                </div>
+                {selected.driverPhone && (
+                  <div className="flex items-start gap-3">
+                    <Phone className="w-5 h-5 mt-0.5" style={{ color: 'var(--warning)' }} />
+                    <div>
+                      <p className="text-xs" style={{ color: 'var(--text-muted)' }}>Driver Phone</p>
+                      <p className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>{selected.driverPhone}</p>
+                    </div>
+                  </div>
+                )}
               </div>
-              <p className="text-sm font-medium mb-1" style={{ color: 'var(--text-primary)' }}>
-                <MapPin className="w-3.5 h-3.5 inline mr-1" style={{ color: 'var(--orange)' }} />
-                {s.origin} → {s.destination}
-              </p>
-              {s.driverName && (
-                <p className="text-xs flex items-center gap-1 mt-2" style={{ color: 'var(--text-muted)' }}>
-                  <Truck className="w-3 h-3" /> {s.driverName}
-                </p>
-              )}
-            </button>
-          ))}
+              <div className="mt-8 pt-6 border-t" style={{ borderColor: 'var(--border)' }}>
+                {/* Embedded quick-track button for active shipments */}
+                <button
+                  onClick={() => {
+                    setWaybillInput(selected.waybillNumber);
+                    handleWaybillLookup();
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                  }}
+                  className="flex items-center justify-center w-full gap-2 px-4 py-3 rounded-xl border font-medium text-sm transition-all hover:shadow-md"
+                  style={{ borderColor: 'var(--border)', color: 'var(--orange)' }}
+                >
+                  <Navigation className="w-4 h-4" />
+                  View Full Tracking Timeline
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div className="bg-[var(--surface)] rounded-xl border border-dashed flex items-center justify-center p-12 text-center" style={{ borderColor: 'var(--border)' }}>
+              <div>
+                <MapPin className="w-12 h-12 mx-auto mb-4 opacity-20" style={{ color: 'var(--text-primary)' }} />
+                <p className="text-sm" style={{ color: 'var(--text-muted)' }}>Select an active shipment from the list to view its details.</p>
+              </div>
+            </div>
+          )}
         </div>
       </div>
-
-      {/* Selected detail */}
-      {selected && (
-        <div className="bg-[var(--surface)] rounded-xl border shadow-sm p-6" style={{ borderColor: 'var(--border)' }}>
-          <h3 className="font-bold mb-4" style={{ color: 'var(--text-primary)' }}>Shipment Details — {selected.waybillNumber}</h3>
-          <div className="grid md:grid-cols-4 gap-6">
-            <div className="flex items-start gap-3">
-              <MapPin className="w-5 h-5 mt-0.5" style={{ color: 'var(--orange)' }} />
-              <div>
-                <p className="text-xs" style={{ color: 'var(--text-muted)' }}>Route</p>
-                <p className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>{selected.origin} → {selected.destination}</p>
-              </div>
-            </div>
-            <div className="flex items-start gap-3">
-              <Clock className="w-5 h-5 mt-0.5" style={{ color: 'var(--info)' }} />
-              <div>
-                <p className="text-xs" style={{ color: 'var(--text-muted)' }}>ETA</p>
-                <p className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>{new Date(selected.estimatedDelivery).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}</p>
-              </div>
-            </div>
-            <div className="flex items-start gap-3">
-              <Truck className="w-5 h-5 mt-0.5" style={{ color: 'var(--success)' }} />
-              <div>
-                <p className="text-xs" style={{ color: 'var(--text-muted)' }}>Driver</p>
-                <p className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>{selected.driverName || 'Not assigned'}</p>
-              </div>
-            </div>
-            {selected.driverPhone && (
-              <div className="flex items-start gap-3">
-                <Phone className="w-5 h-5 mt-0.5" style={{ color: 'var(--warning)' }} />
-                <div>
-                  <p className="text-xs" style={{ color: 'var(--text-muted)' }}>Driver Phone</p>
-                  <p className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>{selected.driverPhone}</p>
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
     </div>
   );
 }
