@@ -10,7 +10,7 @@ import { useAuth } from '@/lib/auth-context';
 export default function BookShipmentPage() {
   const { userProfile } = useAuth();
   const [step, setStep] = useState(1);
-  const [shipmentType, setShipmentType] = useState<'FTL' | 'LTL'>('FTL');
+  const [shipmentType, setShipmentType] = useState<'FTL' | 'LTL'>('LTL');
   const [origin, setOrigin] = useState('');
   const [destination, setDestination] = useState('');
   const [weight, setWeight] = useState('');
