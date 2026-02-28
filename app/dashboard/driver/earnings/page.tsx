@@ -1,27 +1,82 @@
 'use client';
 
+import { useState, useEffect } from 'react';
+import { useAuth } from '@/lib/auth-context';
+import { onDriverShipmentsSnapshot, ShipmentRecord } from '@/lib/tracking';
 import { formatCurrency } from '@/lib/utils';
-import { DollarSign, TrendingUp, Calendar, ArrowUpRight } from 'lucide-react';
-
-const earningsData = [
-  { month: 'Sep 2025', trips: 18, amount: 680000 },
-  { month: 'Oct 2025', trips: 22, amount: 820000 },
-  { month: 'Nov 2025', trips: 25, amount: 950000 },
-  { month: 'Dec 2025', trips: 20, amount: 780000 },
-  { month: 'Jan 2026', trips: 24, amount: 910000 },
-  { month: 'Feb 2026', trips: 12, amount: 480000 },
-];
-
-const recentPayouts = [
-  { date: '20 Feb 2026', amount: 320000, ref: 'PAY-2026-089', status: 'completed' },
-  { date: '5 Feb 2026', amount: 160000, ref: 'PAY-2026-072', status: 'completed' },
-  { date: '20 Jan 2026', amount: 450000, ref: 'PAY-2026-055', status: 'completed' },
-  { date: '5 Jan 2026', amount: 460000, ref: 'PAY-2026-038', status: 'completed' },
-];
+import { DollarSign, TrendingUp, Calendar, ArrowUpRight, Loader2 } from 'lucide-react';
+import { Timestamp } from 'firebase/firestore';
 
 export default function EarningsPage() {
-  const totalEarnings = earningsData.reduce((s, e) => s + e.amount, 0);
-  const thisMonth = earningsData[earningsData.length - 1];
+  const { userProfile } = useAuth();
+  const [shipments, setShipments] = useState<ShipmentRecord[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (userProfile?.role === 'driver' && userProfile.uid) {
+      const unsub = onDriverShipmentsSnapshot(userProfile.uid, (data) => {
+        setShipments(data);
+        setLoading(false);
+      });
+      return () => unsub();
+    } else if (userProfile) {
+      setLoading(false);
+    }
+  }, [userProfile]);
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <Loader2 className="w-8 h-8 animate-spin" style={{ color: 'var(--orange)' }} />
+      </div>
+    );
+  }
+
+  // Only count delivered shipments for actual earnings
+  const deliveredShipments = shipments.filter(s => s.currentStatus === 'delivered');
+  
+  const totalEarnings = deliveredShipments.reduce((sum, s) => sum + (s.price || 0), 0);
+  const totalTrips = deliveredShipments.length;
+  const avgPerTrip = totalTrips > 0 ? Math.round(totalEarnings / totalTrips) : 0;
+  
+  const currentMonthPrefix = new Date().toLocaleString('default', { month: 'short', year: 'numeric' });
+  const thisMonthShipments = deliveredShipments.filter(s => {
+    const d = s.createdAt instanceof Timestamp ? s.createdAt.toDate() : new Date(s.createdAt);
+    return d.toLocaleString('default', { month: 'short', year: 'numeric' }) === currentMonthPrefix;
+  });
+  
+  const thisMonthEarnings = thisMonthShipments.reduce((sum, s) => sum + (s.price || 0), 0);
+  const thisMonthTrips = thisMonthShipments.length;
+
+  // Monthly breakdown
+  const monthlyDataMap = new Map<string, { month: string, trips: number, amount: number, sortKey: number }>();
+  
+  deliveredShipments.forEach(s => {
+    const d = s.createdAt instanceof Timestamp ? s.createdAt.toDate() : new Date(s.createdAt);
+    const monthStr = d.toLocaleString('default', { month: 'short', year: 'numeric' });
+    const sortKey = d.getFullYear() * 100 + d.getMonth();
+    
+    if (!monthlyDataMap.has(monthStr)) {
+      monthlyDataMap.set(monthStr, { month: monthStr, trips: 0, amount: 0, sortKey });
+    }
+    const data = monthlyDataMap.get(monthStr)!;
+    data.trips += 1;
+    data.amount += (s.price || 0);
+  });
+  
+  const earningsData = Array.from(monthlyDataMap.values()).sort((a, b) => a.sortKey - b.sortKey);
+  
+  // Generate mock payout history based on past months' earnings (for months with > 0 earnings)
+  const recentPayouts = earningsData
+    .filter(e => e.month !== currentMonthPrefix && e.amount > 0)
+    .sort((a, b) => b.sortKey - a.sortKey)
+    .slice(0, 5)
+    .map((e, i) => ({
+      amount: e.amount,
+      date: `End of ${e.month}`,
+      ref: `PAY-${e.sortKey}-${1000 + i}`,
+      status: 'completed'
+    }));
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -40,7 +95,7 @@ export default function EarningsPage() {
             <p className="text-sm" style={{ color: 'var(--text-muted)' }}>Total Earnings</p>
           </div>
           <p className="text-2xl font-bold" style={{ color: 'var(--text-primary)' }}>{formatCurrency(totalEarnings)}</p>
-          <p className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>Last 6 months</p>
+          <p className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>All-time total</p>
         </div>
         <div className="bg-[var(--surface)] rounded-xl border p-5" style={{ borderColor: 'var(--border)' }}>
           <div className="flex items-center gap-3 mb-2">
@@ -49,8 +104,8 @@ export default function EarningsPage() {
             </div>
             <p className="text-sm" style={{ color: 'var(--text-muted)' }}>This Month</p>
           </div>
-          <p className="text-2xl font-bold" style={{ color: 'var(--text-primary)' }}>{formatCurrency(thisMonth.amount)}</p>
-          <p className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>{thisMonth.trips} trips completed</p>
+          <p className="text-2xl font-bold" style={{ color: 'var(--text-primary)' }}>{formatCurrency(thisMonthEarnings)}</p>
+          <p className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>{thisMonthTrips} trips completed</p>
         </div>
         <div className="bg-[var(--surface)] rounded-xl border p-5" style={{ borderColor: 'var(--border)' }}>
           <div className="flex items-center gap-3 mb-2">
@@ -59,7 +114,7 @@ export default function EarningsPage() {
             </div>
             <p className="text-sm" style={{ color: 'var(--text-muted)' }}>Avg / Trip</p>
           </div>
-          <p className="text-2xl font-bold" style={{ color: 'var(--text-primary)' }}>{formatCurrency(Math.round(totalEarnings / earningsData.reduce((s, e) => s + e.trips, 0)))}</p>
+          <p className="text-2xl font-bold" style={{ color: 'var(--text-primary)' }}>{formatCurrency(avgPerTrip)}</p>
           <p className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>All-time average</p>
         </div>
       </div>
@@ -70,43 +125,51 @@ export default function EarningsPage() {
           <h3 className="font-semibold" style={{ color: 'var(--text-primary)' }}>Monthly Breakdown</h3>
         </div>
         <div className="p-6">
-          <div className="space-y-3">
-            {earningsData.map((e, i) => {
-              const maxAmount = Math.max(...earningsData.map(d => d.amount));
-              const pct = (e.amount / maxAmount) * 100;
-              return (
-                <div key={i} className="flex items-center gap-4">
-                  <span className="text-xs font-medium w-20 flex-shrink-0" style={{ color: 'var(--text-muted)' }}>{e.month}</span>
-                  <div className="flex-1 h-8 rounded-lg overflow-hidden" style={{ background: 'var(--slate-100)' }}>
-                    <div className="h-full rounded-lg flex items-center px-3 text-xs font-semibold text-white transition-all" style={{ width: `${pct}%`, background: 'var(--orange)' }}>
-                      {formatCurrency(e.amount)}
+          {earningsData.length === 0 ? (
+            <p className="text-sm text-center py-4" style={{ color: 'var(--text-muted)' }}>No earnings data yet.</p>
+          ) : (
+            <div className="space-y-4">
+              {earningsData.map((e, i) => {
+                const maxAmount = Math.max(...earningsData.map(d => d.amount));
+                const pct = maxAmount > 0 ? (e.amount / maxAmount) * 100 : 0;
+                return (
+                  <div key={i} className="flex items-center gap-4">
+                    <span className="text-xs font-medium w-20 flex-shrink-0" style={{ color: 'var(--text-muted)' }}>{e.month}</span>
+                    <div className="flex-1 h-8 rounded-lg overflow-hidden" style={{ background: 'var(--slate-100)' }}>
+                      <div className="h-full rounded-lg flex items-center px-3 text-xs font-semibold text-white transition-all" style={{ width: `${Math.max(pct, 5)}%`, background: 'var(--orange)' }}>
+                        {formatCurrency(e.amount)}
+                      </div>
                     </div>
+                    <span className="text-xs w-16 text-right" style={{ color: 'var(--text-muted)' }}>{e.trips} {e.trips === 1 ? 'trip' : 'trips'}</span>
                   </div>
-                  <span className="text-xs" style={{ color: 'var(--text-muted)' }}>{e.trips} trips</span>
-                </div>
-              );
-            })}
-          </div>
+                );
+              })}
+            </div>
+          )}
         </div>
       </div>
 
       {/* Payout History */}
       <div className="bg-[var(--surface)] rounded-xl border shadow-sm" style={{ borderColor: 'var(--border)' }}>
         <div className="px-6 py-4 border-b" style={{ borderColor: 'var(--border)' }}>
-          <h3 className="font-semibold" style={{ color: 'var(--text-primary)' }}>Payout History</h3>
+          <h3 className="font-semibold" style={{ color: 'var(--text-primary)' }}>Payout History (Past Months)</h3>
         </div>
         <div className="divide-y" style={{ borderColor: 'var(--border)' }}>
-          {recentPayouts.map((p, i) => (
-            <div key={i} className="px-6 py-4 flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>{formatCurrency(p.amount)}</p>
-                <p className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>{p.ref} · {p.date}</p>
+          {recentPayouts.length === 0 ? (
+            <p className="text-sm text-center py-6" style={{ color: 'var(--text-muted)' }}>No completed payouts found.</p>
+          ) : (
+            recentPayouts.map((p, i) => (
+              <div key={i} className="px-6 py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div>
+                  <p className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>{formatCurrency(p.amount)}</p>
+                  <p className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>{p.ref} · {p.date}</p>
+                </div>
+                <span className="self-start sm:self-auto px-2.5 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800 flex items-center gap-1">
+                  <ArrowUpRight className="w-3 h-3" /> Completed
+                </span>
               </div>
-              <span className="px-2.5 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800 flex items-center gap-1">
-                <ArrowUpRight className="w-3 h-3" /> Completed
-              </span>
-            </div>
-          ))}
+            ))
+          )}
         </div>
       </div>
     </div>
