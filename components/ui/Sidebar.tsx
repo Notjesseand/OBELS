@@ -2,7 +2,8 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Truck, X, ChevronLeft } from 'lucide-react';
+import { X, ChevronLeft } from 'lucide-react';
+import Image from 'next/image';
 import { cn } from '@/lib/utils';
 import { useState } from 'react';
 
@@ -44,16 +45,11 @@ export default function Sidebar({ links, role, userName = 'User', userRole = 'Cl
         <div className="h-16 flex items-center justify-between px-4 border-b border-white/10">
           {!collapsed && (
             <Link href="/" className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: 'var(--orange)' }}>
-                <Truck className="w-5 h-5 text-white" />
-              </div>
-              <span className="text-white font-bold text-sm">OBELS DAVE</span>
+              <Image src="/obels-logo.png" alt="OBELS DAVE" width={140} height={35} className="h-8 w-auto" />
             </Link>
           )}
           {collapsed && (
-            <div className="w-8 h-8 rounded-lg flex items-center justify-center mx-auto" style={{ background: 'var(--orange)' }}>
-              <Truck className="w-5 h-5 text-white" />
-            </div>
+            <Image src="/obels-logo-icon.png" alt="OBELS DAVE" width={32} height={32} className="w-8 h-8 mx-auto rounded-lg" />
           )}
           <button
             onClick={() => setCollapsed(!collapsed)}
@@ -124,10 +120,7 @@ export function MobileSidebar({
       <aside className="absolute left-0 top-0 h-full w-[260px] flex flex-col" style={{ background: 'var(--navy)' }}>
         <div className="h-16 flex items-center justify-between px-4 border-b border-white/10">
           <Link href="/" className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: 'var(--orange)' }}>
-              <Truck className="w-5 h-5 text-white" />
-            </div>
-            <span className="text-white font-bold text-sm">OBELS DAVE</span>
+            <Image src="/obels-logo.png" alt="OBELS DAVE" width={140} height={35} className="h-8 w-auto" />
           </Link>
           <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-white/10 text-white/60">
             <X className="w-5 h-5" />

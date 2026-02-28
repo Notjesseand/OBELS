@@ -2,7 +2,8 @@
 
 import Link from 'next/link';
 import { useState } from 'react';
-import { Truck, Eye, EyeOff, Loader2 } from 'lucide-react';
+import { Eye, EyeOff, Loader2 } from 'lucide-react';
+import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { createUserWithEmailAndPassword } from 'firebase/auth';
 import { doc, setDoc } from 'firebase/firestore';
@@ -67,9 +68,7 @@ export default function SignupPage() {
           <div className="absolute bottom-20 left-10 w-80 h-80 rounded-full opacity-5" style={{ background: 'var(--orange)' }} />
         </div>
         <div className="relative z-10 max-w-md text-center">
-          <div className="w-20 h-20 rounded-2xl mx-auto mb-8 flex items-center justify-center" style={{ background: 'var(--orange)' }}>
-            <Truck className="w-10 h-10 text-white" />
-          </div>
+          <Image src="/obels-logo.png" alt="OBELS DAVE Logistics" width={240} height={60} className="mx-auto mb-8" />
           <h2 className="text-3xl font-bold text-white mb-4">Join OBELS DAVE</h2>
           <p className="text-white/60 leading-relaxed">
             Create your account to start shipping across Nigeria or join our network of professional drivers.
@@ -95,10 +94,7 @@ export default function SignupPage() {
       <div className="flex-1 flex items-center justify-center px-4 py-12 overflow-y-auto">
         <div className="w-full max-w-md">
           <div className="lg:hidden flex items-center justify-center gap-3 mb-8">
-            <div className="w-10 h-10 rounded-lg flex items-center justify-center" style={{ background: 'var(--orange)' }}>
-              <Truck className="w-6 h-6 text-white" />
-            </div>
-            <span className="text-xl font-bold" style={{ color: 'var(--text-primary)' }}>OBELS DAVE</span>
+            <Image src="/obels-logo.png" alt="OBELS DAVE" width={160} height={40} className="h-10 w-auto" />
           </div>
 
           <h1 className="text-2xl font-bold mb-2" style={{ color: 'var(--text-primary)' }}>Create your account</h1>

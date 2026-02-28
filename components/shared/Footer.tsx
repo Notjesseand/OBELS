@@ -1,5 +1,6 @@
 import Link from 'next/link';
-import { Truck, Phone, Mail, MapPin } from 'lucide-react';
+import { Phone, Mail, MapPin } from 'lucide-react';
+import Image from 'next/image';
 
 export default function Footer() {
   return (
@@ -9,13 +10,7 @@ export default function Footer() {
           {/* Brand */}
           <div className="space-y-4">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-lg flex items-center justify-center" style={{ background: 'var(--orange)' }}>
-                <Truck className="w-6 h-6 text-white" />
-              </div>
-              <div className="flex flex-col">
-                <span className="text-white font-bold text-lg leading-tight">OBELS DAVE</span>
-                <span className="text-xs tracking-widest" style={{ color: 'var(--orange)' }}>LOGISTICS LIMITED</span>
-              </div>
+              <Image src="/obels-logo.png" alt="OBELS DAVE Logistics" width={160} height={40} className="h-9 w-auto" />
             </div>
             <p className="text-white/60 text-sm leading-relaxed">
               Nigeria&apos;s premier logistics and trucking management platform. Moving goods across the nation with speed, safety, and reliability.

@@ -2,10 +2,11 @@
 
 import Link from 'next/link';
 import { useState } from 'react';
-import { X, Truck, ChevronDown } from 'lucide-react';
+import { X, ChevronDown } from 'lucide-react';
 import { HiBars2 } from 'react-icons/hi2';
 import { useAuth } from '@/lib/auth-context';
 import { ThemeToggle } from '@/components/ui/ThemeToggle';
+import Image from 'next/image';
 
 export default function Navbar() {
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -18,13 +19,7 @@ export default function Navbar() {
         <div className="flex items-center justify-between h-16 lg:h-20">
           {/* Logo */}
           <Link href="/" className="flex items-center gap-3 group">
-            <div className="w-10 h-10 rounded-lg flex items-center justify-center" style={{ background: 'var(--orange)' }}>
-              <Truck className="w-6 h-6 text-white" />
-            </div>
-            <div className="flex flex-col">
-              <span className="text-white font-bold text-lg leading-tight tracking-tight">OBELS DAVE</span>
-              <span className="text-xs tracking-widest" style={{ color: 'var(--orange)' }}>LOGISTICS LIMITED</span>
-            </div>
+            <Image src="/obels-logo.png" alt="OBELS DAVE Logistics" width={160} height={40} className="h-9 sm:h-10 w-auto" priority />
           </Link>
 
           {/* Desktop Nav */}

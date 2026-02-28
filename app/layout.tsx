@@ -21,6 +21,17 @@ export const metadata: Metadata = {
   description:
     "Enterprise-grade logistics and trucking management platform. Full Truckload (FTL) and Less-Than-Truckload (LTL) shipping across Nigeria with real-time GPS tracking, dynamic pricing, and automated waybill generation.",
   keywords: ["logistics", "trucking", "Nigeria", "freight", "shipping", "FTL", "LTL", "cargo"],
+  icons: {
+    icon: '/obels-logo-icon.png',
+    shortcut: '/obels-logo-icon.png',
+    apple: '/obels-logo-icon.png',
+  },
+  openGraph: {
+    title: "OBELS DAVE LOGISTICS LIMITED | Nigeria's Premier Trucking & Logistics",
+    description: "Enterprise-grade logistics and trucking management platform. FTL and LTL shipping across Nigeria.",
+    images: [{ url: '/obels-logo-icon.png', width: 512, height: 512 }],
+    type: 'website',
+  },
 };
 
 export default function RootLayout({
