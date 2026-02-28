@@ -90,7 +90,7 @@ export default function ShipmentsPage() {
             </p>
           </div>
         ) : (
-          <table className="w-full">
+            <table className="w-full">
             <thead>
               <tr className="text-left text-xs font-medium" style={{ color: 'var(--text-muted)', borderBottom: '1px solid var(--border)' }}>
                 <th className="px-6 py-4">Waybill #</th>
@@ -102,13 +102,14 @@ export default function ShipmentsPage() {
                 <th className="px-6 py-4">Driver</th>
                 <th className="px-6 py-4">ETA</th>
                 <th className="px-6 py-4">Amount</th>
+                <th className="px-6 py-4 text-center">Action</th>
               </tr>
             </thead>
             <tbody className="text-sm" style={{ color: 'var(--text-secondary)' }}>
               {filtered.map(s => (
                 <tr key={s.waybillNumber} className="border-t hover:bg-black/5 dark:hover:bg-white/5 transition-colors" style={{ borderColor: 'var(--border)' }}>
                   <td className="px-6 py-4 font-mono text-xs font-medium">
-                    <Link href={`/dashboard/client/tracking?waybill=${s.waybillNumber}`} className="hover:underline transition-all" style={{ color: 'var(--orange)' }}>
+                    <Link href={`/dashboard/client/tracking?waybill=${s.waybillNumber}`} className="underline underline-offset-2 transition-all hover:opacity-80" style={{ color: 'var(--orange)' }}>
                       {s.waybillNumber}
                     </Link>
                   </td>
@@ -122,6 +123,15 @@ export default function ShipmentsPage() {
                   <td className="px-6 py-4">{s.driverName || '—'}</td>
                   <td className="px-6 py-4 text-xs">{s.estimatedDelivery ? formatDate(s.estimatedDelivery) : '—'}</td>
                   <td className="px-6 py-4 font-semibold" style={{ color: 'var(--text-primary)' }}>{formatCurrency(s.price)}</td>
+                  <td className="px-6 py-4 text-center">
+                    <Link
+                      href={`/dashboard/client/tracking?waybill=${s.waybillNumber}`}
+                      className="inline-flex items-center justify-center px-3 py-1.5 rounded-lg text-xs font-medium transition-all hover:opacity-90"
+                      style={{ background: 'var(--orange-100)', color: 'var(--orange)' }}
+                    >
+                      Track Live
+                    </Link>
+                  </td>
                 </tr>
               ))}
             </tbody>
