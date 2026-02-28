@@ -28,6 +28,11 @@ export async function getUserProfile(uid: string) {
   return null;
 }
 
+export async function getAllUsers() {
+  const snapshot = await getDocs(collection(db, USERS_COLLECTION));
+  return snapshot.docs.map(doc => ({ uid: doc.id, ...doc.data() }));
+}
+
 // ------ Shipments ------
 export async function createShipment(shipmentData: Omit<Shipment, 'id'>) {
   const newRef = doc(collection(db, SHIPMENTS_COLLECTION));
