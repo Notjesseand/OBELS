@@ -5,6 +5,7 @@ import StatusBadge from '@/components/ui/StatusBadge';
 import { formatCurrency, formatDate, ShipmentStatus } from '@/lib/utils';
 import { onShipmentsSnapshot, ShipmentRecord } from '@/lib/tracking';
 import { Loader2 } from 'lucide-react';
+import Link from 'next/link';
 
 export default function AdminShipmentsPage() {
   const [shipments, setShipments] = useState<ShipmentRecord[]>([]);
@@ -47,12 +48,17 @@ export default function AdminShipmentsPage() {
                 <th className="px-6 py-4">Status</th>
                 <th className="px-6 py-4">ETA</th>
                 <th className="px-6 py-4">Amount</th>
+                <th className="px-6 py-4 text-center">Action</th>
               </tr>
             </thead>
             <tbody className="text-sm" style={{ color: 'var(--text-secondary)' }}>
               {shipments.map(s => (
-                <tr key={s.waybillNumber} className="border-t hover:bg-black/5 dark:hover:bg-white/5" style={{ borderColor: 'var(--border)' }}>
-                  <td className="px-6 py-4 font-mono text-xs font-medium" style={{ color: 'var(--text-primary)' }}>{s.waybillNumber}</td>
+                <tr key={s.waybillNumber} className="border-t hover:bg-black/5 dark:hover:bg-white/5 transition-colors" style={{ borderColor: 'var(--border)' }}>
+                  <td className="px-6 py-4 font-mono text-xs font-medium">
+                    <Link href={`/dashboard/admin/shipments/${s.waybillNumber}`} className="underline underline-offset-2 transition-all hover:opacity-80" style={{ color: 'var(--orange)' }}>
+                      {s.waybillNumber}
+                    </Link>
+                  </td>
                   <td className="px-6 py-4">{s.clientName}</td>
                   <td className="px-6 py-4 whitespace-nowrap">{s.origin} → {s.destination}</td>
                   <td className="px-6 py-4">
@@ -63,6 +69,15 @@ export default function AdminShipmentsPage() {
                   <td className="px-6 py-4"><StatusBadge status={s.currentStatus} size="sm" /></td>
                   <td className="px-6 py-4 text-xs">{s.estimatedDelivery ? formatDate(s.estimatedDelivery) : '—'}</td>
                   <td className="px-6 py-4 font-semibold" style={{ color: 'var(--text-primary)' }}>{formatCurrency(s.price)}</td>
+                  <td className="px-6 py-4 text-center">
+                    <Link
+                      href={`/dashboard/admin/shipments/${s.waybillNumber}`}
+                      className="inline-flex items-center justify-center px-3 py-1.5 rounded-lg text-xs font-medium transition-all hover:opacity-90"
+                      style={{ background: 'var(--orange-100)', color: 'var(--orange)' }}
+                    >
+                      View Details
+                    </Link>
+                  </td>
                 </tr>
               ))}
             </tbody>
