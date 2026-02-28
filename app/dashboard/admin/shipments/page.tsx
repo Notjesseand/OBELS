@@ -40,10 +40,8 @@ export default function AdminShipmentsPage() {
             <thead>
               <tr className="text-left text-xs font-medium" style={{ color: 'var(--text-muted)', borderBottom: '1px solid var(--border)' }}>
                 <th className="px-6 py-4">Waybill</th>
-                <th className="px-6 py-4">Client</th>
                 <th className="px-6 py-4">Route</th>
                 <th className="px-6 py-4">Type</th>
-                <th className="px-6 py-4">Weight</th>
                 <th className="px-6 py-4">Driver</th>
                 <th className="px-6 py-4">Status</th>
                 <th className="px-6 py-4">ETA</th>
@@ -59,12 +57,10 @@ export default function AdminShipmentsPage() {
                       {s.waybillNumber}
                     </Link>
                   </td>
-                  <td className="px-6 py-4">{s.clientName}</td>
                   <td className="px-6 py-4 whitespace-nowrap">{s.origin} → {s.destination}</td>
                   <td className="px-6 py-4">
                     <span className="px-2 py-0.5 rounded text-xs font-medium text-white" style={{ background: s.type === 'FTL' ? 'var(--navy)' : 'var(--info)' }}>{s.type}</span>
                   </td>
-                  <td className="px-6 py-4">{s.weight?.toLocaleString()}kg</td>
                   <td className="px-6 py-4">{s.driverName || '—'}</td>
                   <td className="px-6 py-4"><StatusBadge status={s.currentStatus} size="sm" /></td>
                   <td className="px-6 py-4 text-xs">{s.estimatedDelivery ? formatDate(s.estimatedDelivery) : '—'}</td>
