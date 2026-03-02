@@ -108,7 +108,7 @@ export default function SignupPage() {
                 onClick={() => setRole(r)}
                 className="flex-1 py-2.5 rounded-lg text-sm font-medium transition-all"
                 style={{
-                  background: role === r ? 'white' : 'transparent',
+                  background: role === r ? 'var(--surface)' : 'transparent',
                   color: role === r ? 'var(--text-primary)' : 'var(--text-muted)',
                   boxShadow: role === r ? 'var(--shadow-sm)' : 'none',
                 }}
